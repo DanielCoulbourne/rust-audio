@@ -6,6 +6,31 @@ use minimp3::{Decoder, Frame, Error};
 
 use crate::audio::{AudioSample, AudioBuffer};
 
+pub fn read_mp3_file_to_iterator(
+    filename: &str
+) -> impl Iterator<Item = AudioSample> {
+    let mut decoder = Decoder::new(
+        File::open(filename).unwrap()
+    );
+
+    let mut output: AudioBuffer = AudioBuffer::new();
+
+    loop {
+        match decoder.next_frame() {
+            Ok(Frame { data, sample_rate: _, channels, .. }) => {
+                let mono: Vec<i16> = data.iter().step_by(channels).cloned().collect();
+                output.samples.extend(
+                    mono.iter().map(|sample| AudioSample {
+                        sample: *sample
+                    })
+                );
+            },
+            Err(Error::Eof) => break output.samples.into_iter(),
+            Err(e) => panic!("{:?}", e),
+        }
+    }
+}
+
 pub fn read_mp3_file_to_buffer(
     filename: &str
 ) -> AudioBuffer {
@@ -31,7 +56,7 @@ pub fn read_mp3_file_to_buffer(
     }
 }
 
-pub fn write_vector_to_mp3_file(
+pub fn write_buffer_to_mp3_file(
     filename: &str,
     audio_buffer: AudioBuffer,
     sample_rate: u32
@@ -89,7 +114,7 @@ fn read_mp3_file_to_buffer_test() {
 
 
 #[test]
-fn write_vector_to_mp3_file_test() {
+fn write_buffer_to_mp3_file_test() {
     let mut audio_buffer = AudioBuffer::new();
 
     for _sample in 0..48_000 {
@@ -98,7 +123,7 @@ fn write_vector_to_mp3_file_test() {
         );
     }
 
-    let _file = write_vector_to_mp3_file(
+    let _file = write_buffer_to_mp3_file(
         "test-output/test.mp3",
         audio_buffer,
         48_000
@@ -110,4 +135,14 @@ fn write_vector_to_mp3_file_test() {
     assert_eq!(true, ! output.iter().any(|x| x != &AudioSample::new(0)));
 
     remove_file("test-output/test.mp3").expect("to remove file");
+}
+
+#[test]
+pub fn read_mp3_file_to_iterator_test() {
+    let filename = "stub-data/silence128mono.mp3";
+
+    let output: Vec<AudioSample> = read_mp3_file_to_iterator(filename).collect();
+
+    // assert every sample is a 0
+    assert_eq!(true, ! output.iter().any(|x| x != &AudioSample::new(0)));
 }

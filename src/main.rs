@@ -5,18 +5,24 @@ mod samples;
 mod config; 
 mod audio;
 
-use audio::AudioBuffer;
-use mp3::{read_mp3_file_to_buffer, write_vector_to_mp3_file};
-use buffer::mix;
-use samples::resample;
+use std::fs::File;
+
+use mp3::{read_mp3_file_to_iterator};
+use samples::{mix};
 
 fn main() {
-    let daniel = read_mp3_file_to_buffer("stub-data/daniel.mp3");
-    let caleb = read_mp3_file_to_buffer("stub-data/caleb.mp3");
+    let host_audio = read_mp3_file_to_iterator("stub-data/test1.mp3");
+    let guest_audio = read_mp3_file_to_iterator("stub-data/test2.mp3");
+    
+    
+    let output_file = File::create("output.mp3").unwrap();
 
-    let mix: AudioBuffer = mix(&vec![daniel, caleb]);
+    let tracks = vec![host_audio, guest_audio];
+    let loop_index = 0;
 
-    let resampled = resample(mix, 44100, 48000);
+    loop {
+        let samples = tracks.map(|track| track.next().unwrap());
 
-    write_vector_to_mp3_file("test-output/mix.mp3", resampled, 44100);
+        let mixed_sample = mix(samples);
+    }
 }
