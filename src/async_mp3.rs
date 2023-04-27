@@ -10,7 +10,6 @@ use async_stream::{stream};
 use tokio_stream::StreamExt;
 use tokio::runtime::Runtime;
 
-
 pub async fn read_mp3_file_to_stream(
     filename: &str,
 ) -> impl Stream<Item = AudioSample> {
