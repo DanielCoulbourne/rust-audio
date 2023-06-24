@@ -1,6 +1,7 @@
 use futures::Stream;
+use std::ops::Add;
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Default)]
 pub struct AudioSample {
     pub sample: i16,
 }
@@ -11,9 +12,11 @@ impl AudioSample {
     }
 }
 
-impl Default for AudioSample {
-    fn default() -> Self {
-        AudioSample { sample: 0 }
+impl Add for AudioSample {
+    type Output = Self;
+
+    fn add(self, other: Self) -> Self {
+        Self::new(self.sample + other.sample)
     }
 }
 
@@ -64,7 +67,6 @@ impl PartialEq for AudioBuffer {
         self.samples == other.samples
     }
 }
-
 
 struct AudioStream {}
 
